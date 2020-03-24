@@ -100,7 +100,7 @@ div.tooltip {
 	fill-opacity: .7;
 }
 .pubType{
-	fill: #00aeff;
+	fill: #00bcf5;
 	fill-opacity: .7;
 }
 .miscType{
@@ -109,6 +109,10 @@ div.tooltip {
 }
 .unkType{
 	fill: #f200ff;
+	fill-opacity: .7;
+}
+.dobnowType{
+	fill: #00485e;
 	fill-opacity: .7;
 }
 #riskTable{
@@ -142,7 +146,38 @@ tr.shown td.details-control {
 	border-radius: 7px;
 	width: 150px;
 }
+.hr-sect {
+	display: flex;
+	flex-basis: 100%;
+	align-items: center;
+	color: rgba(0, 0, 0, 0.35);
+	content: "";
+	flex-grow: 1;
+	background: rgba(0, 0, 0, 0.35);
+	height: 1px;
+	font-size: 0px;
+	line-height: 0px;
+	margin: 0px 8px;
+}
+.dataTables_empty {
+  display:none;
+}
 
+.dataTables_wrapper .dataTables_processing {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 50px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-left: -100px;
+  margin-top: 100px;
+  text-align: center;
+  padding: 1em 0;
+  z-index: 1;
+}
 </style>
 <body class="application">
 <div class="container-fluid" style="margin-top:10px;margin-bottom:0">
@@ -157,7 +192,7 @@ tr.shown td.details-control {
 			  <div class="chart-stage" id="map-container">
 				<div id="map">
 					<div id="ui-container" class="ui" style="z-index: 401">		
-							  <!-- <h5>BUILDING TYPE</h5>				   -->
+							  <h5>OCCUPANCY TYPE</h5>				  
 							  <span style="display:inline-block; background-color:#ffcc00; padding:0px; margin:0px; height:13px; width:13px; overflow:hidden"><input type="checkbox" style="opacity:0.50;padding:0px;margin:0px" name="bldg_type" class="regular-checkbox" value="typeRes" id="typeRes" /></span>
 								<label for="typeRes"></label><span class="en">RESIDENTIAL</span>
 							  <br/>
@@ -166,7 +201,7 @@ tr.shown td.details-control {
 								<label for="typeCom"></label><span class="en">COMMERCIAL</span>
 							  <br/>
 							  
-							  <span style="display:inline-block; background-color:#00aeff; padding:0px; margin:0px; height:13px; width:13px; overflow:hidden"><input type="checkbox" style="opacity:0.50;padding:0px;margin:0px" name="bldg_type" class="regular-checkbox" value="typePub" id="typePub"/></span>
+							  <span style="display:inline-block; background-color:#00bcf5; padding:0px; margin:0px; height:13px; width:13px; overflow:hidden"><input type="checkbox" style="opacity:0.50;padding:0px;margin:0px" name="bldg_type" class="regular-checkbox" value="typePub" id="typePub"/></span>
 								<label for="typePub"></label><span class="en">PUBLIC</span>
 							  <br/>
 							  
@@ -177,6 +212,11 @@ tr.shown td.details-control {
 							  <span style="display:inline-block; background-color:#f200ff; padding:0px; margin:0px; height:13px; width:13px; overflow:hidden"><input type="checkbox" style="opacity:0.50;padding:0px;margin:0px" name="bldg_type" class="regular-checkbox" value="typeUnk" id="typeUnk"/></span>
 								<label for="typeUnk"></label><span class="en">UNKNOWN</span>
 							  <br/>
+							  <br/>
+							  <div class="hr-sect"></div>
+							  <br/>
+							  <span style="display:inline-block; background-color:#00485e; padding:0px; margin:0px; height:13px; width:13px; overflow:hidden"><input type="checkbox" style="opacity:0.50;padding:0px;margin:0px" name="bldg_type" class="regular-checkbox" value="typeDOBNOW" id="typeDOBNOW"/></span>
+								<label for="typeDOBNOW"></label><span class="en">DOB NOW</span>
 					</div>				
 				</div>
 			  </div>
@@ -189,8 +229,7 @@ tr.shown td.details-control {
 						<thead>
 							<tr>
 								<th></th>
-								<th>HOUSE NUMBER</th>
-								<th>STREET</th>
+								<th>ADDRESS</th>
 								<th>BOROUGH</th>
 							</tr>
 						</thead>			
@@ -268,8 +307,10 @@ var width = $("#map").width(),
 				return "pubType";
 			}  else if (d["Occupancy Type"] == "MISCELLANEOUS"){ 
 				return "miscType";
-			}  else if (d["Occupancy Type"] == ""){ 
+			}  else if (d["Occupancy Type"] == "" && d["Data Source"] == "BIS"){ 
 				return "unkType";
+			}  else if (d["Data Source"] == "DOB NOW"){ 
+				return "dobnowType";
 			}
 		})
 
@@ -283,7 +324,8 @@ var width = $("#map").width(),
 					'COMMUNITY DISTRICT: ' + d["Community Board"] + '</br>' +
 					'PERMIT ISSUANCE DATE: ' + d["Permit Issuance Date"] + '</br>' +
 					'PERMIT EXPIRATION DATE: ' + d["Permit Expiration Date"] + '</br>' +
-					'OCCUPANCY TYPE: ' + d["Occupancy Type"]
+					'OCCUPANCY TYPE: ' + d["Occupancy Type"] + '</br>' +
+					'DATA SOURCE: ' + d["Data Source"]
 				)
 				if (d3.event.pageX > (width - 200)) {
 				   tooltip.style("left", (d3.event.pageX - 350) + "px");
@@ -326,6 +368,7 @@ var width = $("#map").width(),
 				d.permitIssuanceDate = formatDate(d["Permit Issuance Date"]);
 				d.permitExpDate = formatDate(d["Permit Expiration Date"]);
 				d.occType = d["Occupancy Type"];
+				d.dataSrc = d["Data Source"];
 			return d;
 			});
 		pointsOverlay.addTo(map);
@@ -333,6 +376,7 @@ var width = $("#map").width(),
 		d3.selectAll(".pubType").style("display", "none");
 		d3.selectAll(".miscType").style("display", "none");
 		d3.selectAll(".unkType").style("display", "none");
+		d3.selectAll(".dobnowType").style("display", "none");
 	});
 
 
@@ -370,7 +414,7 @@ var width = $("#map").width(),
 			'</tr>'+
 			'<tr>'+
 				'<td>BIN:</td>'+
-				'<td>'+d["BIN Number"]+'</td>'+
+				'<td>'+d["BIN"]+'</td>'+
 			'</tr>'+
 			'<tr>'+
 				'<td>Community District:</td>'+
@@ -385,8 +429,12 @@ var width = $("#map").width(),
 				'<td>'+d["Permit Expiration Date"]+'</td>'+
 			'</tr>'+
 			'<tr>'+
-				'<td>Proposed Occupancy Classification:</td>'+
+				'<td>Occupancy Type:</td>'+
 				'<td>'+d["Occupancy Type"]+'</td>'+
+			'</tr>'+
+			'<tr>'+
+				'<td>Data Source:</td>'+
+				'<td>'+d["Data Source"]+'</td>'+
 			'</tr>'+
 			
 		'</table>';
@@ -404,11 +452,13 @@ var width = $("#map").width(),
 					"dataSrc": ""
 				},
 
-				order: [[3, "asc"], [1, "asc"], [2, "asc"]],
+				order: [[2, "asc"], [1, "asc"]],
 				lengthChange: false,
 				"scrollY": "765px",
 				"scrollCollapse": true,
 				"paging": false,
+				//"bProcessing": true,
+				"processing": true,
 
 				columns: [
 					{
@@ -417,9 +467,7 @@ var width = $("#map").width(),
 						"data": null,
 						"defaultContent": ''
 					},
-					{	data: "Job Location House Number"
-					},
-					{	data: "Job Location Street Name"
+					{	data: "Address"
 					},
 					{ 	data: "Borough"
 					}
@@ -479,6 +527,7 @@ var width = $("#map").width(),
 		typePubCheckbox = document.querySelector('input[id="typePub"]');
 		typeMiscCheckbox = document.querySelector('input[id="typeMisc"]');
 		typeUnkCheckbox = document.querySelector('input[id="typeUnk"]');
+		typeDOBNOWCheckbox = document.querySelector('input[id="typeDOBNOW"]');
 
 	typeResCheckbox.onchange = function(){
 			if(this.checked){
@@ -535,12 +584,25 @@ var width = $("#map").width(),
 	typeUnkCheckbox.onchange = function(){
 			if(this.checked){
 				d3.selectAll(".unkType").filter(function(d) {
-					return d["Occupancy Type"] == "";
+					return (d["Occupancy Type"] == "" && d["Data Source"] == "BIS");
 				})
 				.style("display", "block");	
 			} else {
 				d3.selectAll(".unkType").filter(function(d) {
-					return d["Occupancy Type"] == "";
+					return (d["Occupancy Type"] == "" && d["Data Source"] == "BIS");
+				})
+				.style("display", "none");						
+			}
+	};
+	typeDOBNOWCheckbox.onchange = function(){
+			if(this.checked){
+				d3.selectAll(".dobnowType").filter(function(d) {
+					return d["Data Source"] == "DOB NOW";
+				})
+				.style("display", "block");	
+			} else {
+				d3.selectAll(".dobnowType").filter(function(d) {
+					return d["Data Source"] == "DOB NOW";
 				})
 				.style("display", "none");						
 			}
